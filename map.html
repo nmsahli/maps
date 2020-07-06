@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <style>
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div id="map"></div>
+    <script>
+        var map = L.map('map').setView([24.5862137, 44.4707531], 6);
+        L.tileLayer('https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=SGwuaJ2Hj3iczLGFJknj', {
+            attribution: '<a href="https://www.maptiler.com/copyright/" target="_blank">&copy; MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">&copy; OpenStreetMap contributors</a>'
+        }).addTo(map);
+        // var marker = L.marker([24.5862137, 44.4707531]).addTo(map);
+        //var marker = L.marker([24.5862137, 44.4707531]).addTo(map).on('mouseover', onClick);
+
+        //function onClick(e) {
+        //    alert(this.getLatLng());
+        //}
+
+        var url = "BaseBallFinal.json";
+        //Defining variables for the selected points, circle, and click marker
+        var theMarker;
+        var theCircle;
+        var geojsonLayer;
+
+        var map = L.map('map').setView([24.5862137, 44.4707531], 6);
+
+        var osm = new L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        // If this map.on "click" function is commented out it will require 
+        //you to click on a point feature and it's on-click event to select points.	
+        map.on('click', function(e) {
+            lat = e.latlng.lat;
+            lon = e.latlng.lng;
+            ProcessClick(lat, lon)
+        });
+
+        function ProcessClick(lat, lon) {
+            console.log("You clicked the map at LAT: " + lat + " and LONG: " + lon);
+            //Clear existing marker, circle, and selected points if selecting new points
+            if (theCircle != undefined) {
+                map.removeLayer(theCircle);
+            };
+            if (theMarker != undefined) {
+                map.removeLayer(theMarker);
+            };
+            if (geojsonLayer != undefined) {
+                map.removeLayer(geojsonLayer);
+            };
+
+            //Add a marker to show where you clicked.
+            theMarker = L.marker([lat, lon]).addTo(map); //Note: if lat/lon are strings then use parseFloat(lat), parseFloat(lon)
+            SelectPoints(lat, lon)
+
+        }
+        var selPts = [];
+
+        function SelectPoints(lat, lon) {
+            var dist = document.getElementById("miles").value;
+
+            xy = [lat, lon]; //center point of circle
+
+            var theRadius = parseInt(dist) * 1609.34 //1609.34 meters in a mile //dist is a string so it's convered to an Interger.
+
+            selPts.length = 0; //Reset the array if selecting new points
+
+            sites.eachLayer(function(layer) {
+                // Lat, long of current point as it loops through.
+                layer_lat_long = layer.getLatLng();
+
+                // Distance from our circle marker To current point in meters
+                distance_from_centerPoint = layer_lat_long.distanceTo(xy);
+
+                // See if meters is within radius, add the to array
+                if (distance_from_centerPoint <= theRadius) {
+                    selPts.push(layer.feature);
+                }
+            });
+            // draw circle to see the selection area
+            theCircle = L.circle(xy, theRadius, { /// Number is in Meters
+                color: 'orange',
+                fillOpacity: 0,
+                opacity: 1
+            }).addTo(map);
+
+            //Symbolize the Selected Points
+            geojsonLayer = L.geoJson(selPts, {
+
+                pointToLayer: function(feature, latlng) {
+                    return L.circleMarker(latlng, {
+                        radius: 4, //expressed in pixels circle size
+                        color: "green",
+                        stroke: true,
+                        weight: 7, //outline width  increased width to look like a filled circle.
+                        fillOpcaity: 1
+                    });
+                }
+            });
+            //Add selected points back into map as green circles.
+            map.addLayer(geojsonLayer);
+
+            //Take array of features and make a GeoJSON feature collection 
+            var GeoJS = {
+                type: "FeatureCollection",
+                features: selPts
+            };
+            //Show number of selected features.
+            console.log(GeoJS.features.length + " Selected features");
+            // show selected GEOJSON data in console
+            console.log(JSON.stringify(GeoJS));
+        } //end of SelectPoints function
+    </script>
+</body>
+
+</html>

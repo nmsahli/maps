@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Example</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet-src.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+</head>
+<style>
+    html,
+    body {
+        height: 100%;
+    }
+    
+    .parent {
+        display: flex;
+        flex-flow: column;
+        height: 100%;
+    }
+    
+    .child-top {
+        flex: 0 1 50px;
+        background-color: #175B81;
+        color: white;
+    }
+    
+    .child-bottom {
+        flex: 1 1 auto;
+    }
+    
+    #txtboxes {
+        display: inline-block;
+        text-align: right;
+        margin: auto;
+        width: 95%;
+        padding: 10px;
+    }
+</style>
+<div class="parent">
+    <div class="child-bottom" id="map">
+    </div>
+    <script>
+        var url = "BaseBallFinal.json";
+        //Defining variables for the selected points, circle, and click marker
+        var theMarker;
+        var theCircle;
+        var geojsonLayer;
+        var map = L.map('map').setView([24.5862137, 44.4707531], 6);
+        var osm = new L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        sites = L.geoJson(null, {
+            onEachFeature: function(feature, layer) {
+                layer.bindTooltip(feature.properties.Team);
+                layer.on('click', function(e) {
+                    lat = e.latlng.lat;
+                    lon = e.latlng.lng;
+                    ProcessClick(lat, lon)
+                });
+            }
+        });
+        $.getJSON(url, function(data) {
+            sites.addData(data);
+        });
+        //you to click on a point feature and it's on-click event to select points.	
+        map.on('click', function(e) {
+            lat = e.latlng.lat;
+            lon = e.latlng.lng;
+            ProcessClick(lat, lon)
+        });
+
+        function ProcessClick(lat, lon) {
+            console.log("You clicked the map at LAT: " + lat + " and LONG: " + lon);
+            //Clear existing marker, circle, and selected points if selecting new points
+            if (theCircle != undefined) {
+                map.removeLayer(theCircle);
+            };
+            if (theMarker != undefined) {
+                map.removeLayer(theMarker);
+            };
+            if (geojsonLayer != undefined) {
+                map.removeLayer(geojsonLayer);
+            };
+            //Add a marker to show where you clicked.
+            theMarker = L.marker([lat, lon]).addTo(map); //Note: if lat/lon are strings then use parseFloat(lat), parseFloat(lon)
+            SelectPoints(lat, lon)
+        }
+        var selPts = [];
+
+        function SelectPoints(lat, lon) {
+            xy = [lat, lon]; //center point of circle
+            selPts.length = 0; //Reset the array if selecting new points
+
+        } //end of SelectPoints function
+    </script>
+    </body>
+
+</html>
